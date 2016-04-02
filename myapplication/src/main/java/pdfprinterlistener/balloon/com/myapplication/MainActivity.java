@@ -1,11 +1,14 @@
 package pdfprinterlistener.balloon.com.myapplication;
 
+import android.Manifest;
+import android.app.Activity;
 import android.content.IntentSender;
+import android.content.pm.PackageManager;
 import android.os.AsyncTask;
-import android.os.Environment;
-import android.renderscript.ScriptGroup;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.os.Environment;
+import android.support.v4.app.ActivityCompat;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -17,11 +20,6 @@ import com.google.android.gms.drive.DriveApi;
 import com.google.android.gms.drive.DriveContents;
 import com.google.android.gms.drive.DriveFile;
 import com.google.android.gms.drive.DriveId;
-import com.google.android.gms.drive.DriveResource;
-import com.google.android.gms.drive.Metadata;
-import com.google.android.gms.drive.query.Query;
-import com.google.android.gms.drive.query.SortOrder;
-import com.google.android.gms.drive.query.SortableField;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -34,7 +32,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
@@ -47,16 +44,37 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     private List<String> list;
     private GoogleApiClient mGoogleApiClient;
     String filePath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getPath() + "/";
-    protected static final int REQUEST_CODE_RESOLUTION = 1;
+    private static final String TAG = "PDFListener";
     Thread getFileThread = null;
     String fileName;
     String resourceId;
+    protected static final int REQUEST_CODE_RESOLUTION = 1;
+    private static final int REQUEST_EXTERNAL_STORAGE = 1;
+    private static String[] PERMISSIONS_STORAGE = {
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE
+    };
+
+    public static void verifyStoragePermissions(Activity activity) {
+        // Check if we have write permission
+        int permission = ActivityCompat.checkSelfPermission(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+
+        if (permission != PackageManager.PERMISSION_GRANTED) {
+            // We don't have permission so prompt the user
+            ActivityCompat.requestPermissions(
+                    activity,
+                    PERMISSIONS_STORAGE,
+                    REQUEST_EXTERNAL_STORAGE
+            );
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         list = new ArrayList<>();
+
     }
 
     @Override
@@ -94,8 +112,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                         BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
 
                         String jsonString = br.readLine();
-                        Log.i("json", jsonString);
-                        Log.i("list", list.size() + "");
+                        Log.i(TAG, jsonString);
+                        Log.i(TAG, list.size() + "");
                         JSONArray jsonArray = new JSONArray(jsonString);
 
 
@@ -137,9 +155,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 //                        String resourceId = "0B7aKAvWVJQKtSXJVTUxBVFliXzg";
 
                             DriveFile driveFile = DriveId.decodeFromString(resourceId).asDriveFile();
-
-
-//                        DriveFile file = Drive.DriveApi.getFile(mGoogleApiClient,
+//                       depreciated
+//                      DriveFile file = Drive.DriveApi.getFile(mGoogleApiClient,
 //                                DriveId.decodeFromString(resourceId));
                             driveFile.open(mGoogleApiClient, DriveFile.MODE_READ_ONLY, null).setResultCallback(new ResultCallback<DriveApi.DriveContentsResult>() {
                                 @Override
@@ -152,9 +169,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
                                         DriveContents contents = result.getDriveContents();
                                         InputStream inputStream = contents.getInputStream();
+                                        verifyStoragePermissions(MainActivity.this);
                                         File file = new File(filePath + fileName);
                                         FileOutputStream fileOut = null;
-
                                         fileOut = new FileOutputStream(file);
 
                                         byte[] buffer = new byte[1024];
@@ -167,9 +184,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                                         fileOut.flush();
                                         fileOut.close();
 
-                                        Log.i("print", "printed " + fileName);
-                                        if(!list.isEmpty())
-                                        list.remove(0);
+                                        Log.i(TAG, "printed " + fileName);
+                                        if (!list.isEmpty())
+                                            list.remove(0);
 
 
                                     } catch (FileNotFoundException e) {
@@ -198,7 +215,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     @Override
     public void onConnected(Bundle bundle) {
 
-        Log.i("connection", "connection success");
+        Log.i(TAG, "connection success");
         getFileThread.start();
 
     }
@@ -206,7 +223,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     @Override
     public void onConnectionSuspended(int i) {
-        Log.i("connection", "GoogleApiClient connection suspended");
+        Log.i(TAG, "GoogleApiClient connection suspended");
     }
 
     @Override
@@ -219,7 +236,27 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         try {
             connectionResult.startResolutionForResult(this, REQUEST_CODE_RESOLUTION);
         } catch (IntentSender.SendIntentException e) {
-            Log.e("connection", "Exception while starting resolution activity", e);
+            Log.e(TAG, "Exception while starting resolution activity", e);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        switch (requestCode) {
+            case REQUEST_EXTERNAL_STORAGE: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Log.e(TAG, "permission allowed");
+                    return;
+
+                } else {
+
+                    Log.e(TAG, "permission denied");
+                }
+                return;
+            }
         }
     }
 
