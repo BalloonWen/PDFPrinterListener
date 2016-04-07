@@ -40,8 +40,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
-    private static final String RECEIVE_MESSAGE_SERVLET = "http://135.23.64.27:8080/TestOAuthServer/servlet/ReceiveMessageServlet";
-    private List<String> list;
+    private static final String RECEIVE_MESSAGE_SERVLET = "http://192.168.139.128:8080/TestOAuthServer/servlet/ReceiveMessageServlet";
+//    private static final String RECEIVE_MESSAGE_SERVLET = "http://135.23.64.27:8080/TestOAuthServer/servlet/ReceiveMessageServlet";
+    private List<String> files2StoreList;
     private GoogleApiClient mGoogleApiClient;
     String filePath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getPath() + "/";
     private static final String TAG = "PDFListener";
@@ -73,7 +74,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        list = new ArrayList<>();
+        files2StoreList = new ArrayList<>();
 
     }
 
@@ -92,122 +93,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         }
         mGoogleApiClient.connect();
 
-        final Thread queueThread = new Thread() {
-            @Override
-            public void run() {
-                try {
-                    while (true) {
+        final Thread queueThread = new ReceiveMessageThread();
 
-                        URL url = new URL(RECEIVE_MESSAGE_SERVLET);
-                        HttpURLConnection httpConn = null;
-
-                        httpConn = (HttpURLConnection) url.openConnection();
-
-                        httpConn.setUseCaches(false);
-                        httpConn.setDoOutput(true);
-                        httpConn.setRequestMethod("POST");
-                        httpConn.setDoInput(true);
-
-                        InputStream inputStream = httpConn.getInputStream();
-                        BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
-
-                        String jsonString = br.readLine();
-                        Log.i(TAG, jsonString);
-                        Log.i(TAG, list.size() + "");
-                        JSONArray jsonArray = new JSONArray(jsonString);
-
-
-                        for (int i = 0; i < jsonArray.length(); i++) {
-                            list.add(jsonArray.getString(i));
-                        }
-                        sleep(5000);
-
-                    }
-                } catch (MalformedURLException e) {
-                    e.printStackTrace();
-                } catch (ProtocolException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            ;
-        };
-
-        getFileThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (true) {
-                    try {
-                        Thread.sleep(1000);
-                        if (!list.isEmpty()) {
-
-                            JSONObject json = new JSONObject(list.get(0));
-
-
-                            resourceId = json.getString("DriveId");
-                            fileName = json.getString("fileName");
-//                        String resourceId = "0B7aKAvWVJQKtSXJVTUxBVFliXzg";
-
-                            DriveFile driveFile = DriveId.decodeFromString(resourceId).asDriveFile();
-//                       depreciated
-//                      DriveFile file = Drive.DriveApi.getFile(mGoogleApiClient,
-//                                DriveId.decodeFromString(resourceId));
-                            driveFile.open(mGoogleApiClient, DriveFile.MODE_READ_ONLY, null).setResultCallback(new ResultCallback<DriveApi.DriveContentsResult>() {
-                                @Override
-                                public void onResult(DriveApi.DriveContentsResult result) {
-                                    try {
-                                        if (!result.getStatus().isSuccess()) {
-                                            // Handle error
-                                            return;
-                                        }
-
-                                        DriveContents contents = result.getDriveContents();
-                                        InputStream inputStream = contents.getInputStream();
-                                        verifyStoragePermissions(MainActivity.this);
-                                        File file = new File(filePath + fileName);
-                                        FileOutputStream fileOut = null;
-                                        fileOut = new FileOutputStream(file);
-
-                                        byte[] buffer = new byte[1024];
-                                        int len = -1;
-                                        while ((len = inputStream.read(buffer)) != -1) {
-                                            fileOut.write(buffer, 0, len);
-                                        }
-
-                                        inputStream.close();
-                                        fileOut.flush();
-                                        fileOut.close();
-
-                                        Log.i(TAG, "printed " + fileName);
-                                        if (!list.isEmpty())
-                                            list.remove(0);
-
-
-                                    } catch (FileNotFoundException e) {
-                                        e.printStackTrace();
-                                    } catch (IOException e) {
-                                        e.printStackTrace();
-                                    }
-                                    return;
-                                }
-                            });
-                        }
-
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-
-            }
-        });
+        getFileThread = new Thread(new StoreFileThread());
         queueThread.start();
 
     }
@@ -272,6 +160,119 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 e.printStackTrace();
             }
             return null;
+        }
+    }
+
+    private class ReceiveMessageThread extends Thread {
+        @Override
+        public void run() {
+            try {
+                while (true) {
+
+                    URL url = new URL(RECEIVE_MESSAGE_SERVLET);
+                    HttpURLConnection httpConn = null;
+
+                    httpConn = (HttpURLConnection) url.openConnection();
+
+                    httpConn.setUseCaches(false);
+                    httpConn.setDoOutput(true);
+                    httpConn.setRequestMethod("POST");
+                    httpConn.setDoInput(true);
+
+                    InputStream inputStream = httpConn.getInputStream();
+                    BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
+
+                    String jsonString = br.readLine();
+                    Log.i(TAG, jsonString);
+                    Log.i(TAG, files2StoreList.size() + "");
+                    JSONArray jsonArray = new JSONArray(jsonString);
+
+
+                    for (int i = 0; i < jsonArray.length(); i++) {
+                        files2StoreList.add(jsonArray.getString(i));
+                    }
+                    sleep(5000);
+
+                }
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (ProtocolException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (JSONException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private class StoreFileThread implements Runnable {
+        @Override
+        public void run() {
+            while (true) {
+                try {
+                    Thread.sleep(1000);
+                    if (!files2StoreList.isEmpty()) {
+
+                        JSONObject json = new JSONObject(files2StoreList.get(0));
+                        resourceId = json.getString("DriveId");
+                        fileName = json.getString("fileName");
+//                        String resourceId = "0B7aKAvWVJQKtSXJVTUxBVFliXzg";
+
+                        DriveFile driveFile = DriveId.decodeFromString(resourceId).asDriveFile();
+//                       depreciated
+//                      DriveFile file = Drive.DriveApi.getFile(mGoogleApiClient,
+//                                DriveId.decodeFromString(resourceId));
+                        driveFile.open(mGoogleApiClient, DriveFile.MODE_READ_ONLY, null).setResultCallback(new ResultCallback<DriveApi.DriveContentsResult>() {
+                            @Override
+                            public void onResult(DriveApi.DriveContentsResult result) {
+                                try {
+                                    if (!result.getStatus().isSuccess()) {
+                                        // Handle error
+                                        return;
+                                    }
+
+                                    DriveContents contents = result.getDriveContents();
+                                    InputStream inputStream = contents.getInputStream();
+                                    verifyStoragePermissions(MainActivity.this);
+                                    File file = new File(filePath + fileName);
+                                    FileOutputStream fileOut = null;
+                                    fileOut = new FileOutputStream(file);
+
+                                    byte[] buffer = new byte[1024];
+                                    int len = -1;
+                                    while ((len = inputStream.read(buffer)) != -1) {
+                                        fileOut.write(buffer, 0, len);
+                                    }
+
+                                    inputStream.close();
+                                    fileOut.flush();
+                                    fileOut.close();
+
+                                    Log.i(TAG, "printed " + fileName);
+                                    if (!files2StoreList.isEmpty())
+                                        files2StoreList.remove(0);
+
+
+                                } catch (FileNotFoundException e) {
+                                    e.printStackTrace();
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                                return;
+                            }
+                        });
+                    }
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+
         }
     }
 }
