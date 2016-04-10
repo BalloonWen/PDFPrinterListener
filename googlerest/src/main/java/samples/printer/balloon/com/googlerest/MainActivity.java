@@ -31,7 +31,7 @@ import java.util.Queue;
 public class MainActivity extends AppCompatActivity {
 
     private static final int GET_PERMIT_REQUEST = 1;
-    private static final String DRIVE_ID = "DriveId:CAESHDBCN2FLQXZXVkpRS3Rja2w2U1hGd0xWQjJTV3MYECCcjsvkzFMoAA==";
+//    private static final String DRIVE_ID = "DriveId:CAESHDBCN2FLQXZXVkpRS3Rja2w2U1hGd0xWQjJTV3MYECCcjsvkzFMoAA==";
     //    private static final String RESOURCE_ID="0B7aKAvWVJQKtckl6SXFwLVB2SWs";
     private static String FILE_PATH = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getPath() + "/";
 //    private static final String RECEIVE_MESSAGE_SERVLET = "http://135.23.64.27:8080/TestOAuthServer/servlet/ReceiveMessageServlet";
@@ -43,6 +43,12 @@ private static final String RECEIVE_MESSAGE_SERVLET = "http://samprinter.cloudap
     Button btnGetPermission;
     Button btnDownload;
     TextView txtGetPermission;
+
+
+
+
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,7 +73,7 @@ private static final String RECEIVE_MESSAGE_SERVLET = "http://samprinter.cloudap
         btnDownload.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
+                executePrint();
             }
         });
 
@@ -104,7 +110,20 @@ private static final String RECEIVE_MESSAGE_SERVLET = "http://samprinter.cloudap
                 }
         }
     }
+    private void executePrint() {
+        // Check if SDK installed
+//        try {
+//            Ssp.getInstance().initialize(getApplicationContext());
+//        } catch (SsdkUnsupportedException e) {
+//            Log.e(TAG, "SDK is not supported!", e);
+//            Toast.makeText(getApplicationContext(), "Printer SDK is not installed! Finishing...", Toast.LENGTH_LONG).show();
+//            finish();
+//            return;
+//        }
 
+        // Pass application context
+//        new PrintAsyncTask(getApplicationContext()).execute();
+    }
     private class getFileFromGD extends Thread {
         @Override
         public void run() {
@@ -175,6 +194,23 @@ private static final String RECEIVE_MESSAGE_SERVLET = "http://samprinter.cloudap
             }
         }
     }
+//    private static PrintAttributesCaps requestCaps(final Context context) {
+//        final Result result = new Result();
+//        final PrintAttributesCaps caps = PrinterService.getCapabilities(context, result);
+//
+//        if (caps != null) {
+//            Log.d(TAG, "Received Caps as:" +
+//                    "AutoFit: " + caps.getAutoFitList() +
+//                    ", ColorMode: " + caps.getColorModeList() +
+//                    ", Max Copies: " + caps.getMaxCopies() +
+//                    ", Duplex: " + caps.getDuplexList());
+//        }
+//
+//        return caps;
+//    }
+
+
+
 }
 
 

@@ -9,6 +9,8 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/PrintTest" />
+            <option value="$PROJECT_DIR$/SSPLib" />
             <option value="$PROJECT_DIR$/googlerest" />
             <option value="$PROJECT_DIR$/myapplication" />
           </set>

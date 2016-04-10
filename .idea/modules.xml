@@ -3,6 +3,8 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/PDFPrinterListener.iml" filepath="$PROJECT_DIR$/PDFPrinterListener.iml" />
+      <module fileurl="file://$PROJECT_DIR$/PrintTest/PrintTest.iml" filepath="$PROJECT_DIR$/PrintTest/PrintTest.iml" />
+      <module fileurl="file://$PROJECT_DIR$/SSPLib/SSPLib.iml" filepath="$PROJECT_DIR$/SSPLib/SSPLib.iml" />
       <module fileurl="file://$PROJECT_DIR$/googlerest/googlerest.iml" filepath="$PROJECT_DIR$/googlerest/googlerest.iml" />
       <module fileurl="file://$PROJECT_DIR$/myapplication/myapplication.iml" filepath="$PROJECT_DIR$/myapplication/myapplication.iml" />
     </modules>

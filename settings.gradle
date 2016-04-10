@@ -1,1 +1,1 @@
-include ':myapplication', ':googlerest'
+include ':myapplication', ':googlerest', ':SSPLib', ':PrintTest'
